@@ -27,12 +27,18 @@ init_clock:
         pop acc
         pop psw
 
-init_adc:       mov   adccon1,#11001100b
-                ret
+        ret
+
+init_adc:
+        mov   adccon1,#11001100b
+
+        ret
 
 ; MAIN FUNCTIONS ------------------------------------------------------------;
 
 ; read_adc: reads the ADC value from the ADC and returns it in the accumulator
+; ACC as 0-7 channel selection parameter
+; return value: 8-bit ADC value in ACC
 read_adc:       mov   adccon2,acc
 read_adc1:      setb  sconv
 read_adc2:      jb    sconv,read_adc2
@@ -43,6 +49,7 @@ read_adc2:      jb    sconv,read_adc2
                 anl   a,#f0h
                 orl   a,b
                 swap  a
+
                 ret
 
 delay:
