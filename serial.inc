@@ -1,4 +1,7 @@
-; Dependencie for serial uart communication
+; Simple DAC Practice Enterprice Project source code
+; Written by Alessandro Lo Monaco v1 on 2024-05-01
+;
+; Serial UART communication library
 
 init_serial:
     ; timer 3 for boud generation with internal core clock of 16.777216Mhz
