@@ -1,7 +1,9 @@
 ; Simple DAC Practice Enterprice Project source code
 ; Written by Alessandro Lo Monaco v1 on 2024-05-01
 ;
-; Serial UART communication library
+; ___________________________________________________________________________
+;
+;                                                      Serial UART subroutine
 
 init_serial:
     ; timer 3 for boud generation with internal core clock of 16.777216Mhz
@@ -13,6 +15,9 @@ init_serial:
 
     ret
 
+
+; ___________________________________________________________________________
+;
 send_byte:
     jnb  ti, send_byte  ; Wait until the byte is sent
     clr  ti             ; Clear the flag
