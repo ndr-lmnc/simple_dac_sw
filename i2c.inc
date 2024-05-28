@@ -23,7 +23,9 @@ init_IIC:
     ret
 
 ; ___________________________________________________________________________ ;
-;
+;                                                               send IIC data
+; Address and data are contained in the associated variables SLAVEADD and]
+; OUTPUT.
 send_data_IIC:
     lcall   start_bit         ; acquire bus and send slave address
 
@@ -44,8 +46,9 @@ send_data_IIC_ret:
     ret
 
 
-; ___________________________________________________________________________
-;
+; ___________________________________________________________________________ ;
+;                                                            receive IIC data
+; The byte is transmitted to the IIC bus
 send_byte_IIC:
     mov     BITCNT,#8
     setb    MDE       ; enable SDATA pin as output
@@ -67,7 +70,8 @@ next:
     ret
 
 
-; ___________________________________________________________________________
+; ___________________________________________________________________________ ;
+;                                                         start bit condition
 start_bit:
     setb   MDE      ; enable SDATA pin as output
     clr    NOACK
@@ -76,7 +80,8 @@ start_bit:
 
     ret
 
-; ___________________________________________________________________________
+; ___________________________________________________________________________ ;
+;                                                          stop bit condition
 stop_bit:
     setb   MDE      ; enable SDATA pin as output
     clr    MDO      ; get SDATA ready for stop
