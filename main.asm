@@ -25,65 +25,45 @@ BITCNT     EQU    034h
 NOACK      BIT    035h       ; Some flags but strange Bit assotiation
 ERR        BIT    036h
 
+; MAIN PROGRAM -------------------------------------------------------------- ;
+
 main:
         mov     sp, #7fh
-        mov     SLAVEADD,#60h
-        mov     r4,#0fh
+;        mov     SLAVEADD,#60h   ; This slave address is shifted to the left by 1 bit for the WRITE operation
 
         lcall   init_clock   ; set the clock to 16.777216 MHz all next operations are based on this clock
-        lcall   init_IIC     ; initialize IIC communication
-        ;lcall   init_SPI     ; initialize SPI communication
-        ;lcall   init_display ; initialize display
+        ;lcall   init_IIC     ; initialize IIC communication
+        lcall   init_SPI     ; initialize SPI communication
+        lcall   init_display ; initialize display
         lcall   init_serial  ; initialize serial communication to 9600 baud
         lcall   init_adc     ; initialize ADC
-        ;lcall   init_volume  ; initialize volume bars
+;        lcall   init_volume  ; initialize volume bars
 loop:
         mov     CHANNELS,#7
         mov     BUTMASK,#10000000b
-        mov     SLAVEADD,#61h
 loop1:
-;        mov     a,CHANNELS   ; need loop for all 8 channels and send to serial
-;        lcall   read_adc     ; read ADC value of channel in ACC
-;
-;        lcall   send_byte    ; send read value to serial
-;        mov     a,CHANNELS
-;        lcall   send_byte    ; send channel number to serial
-;
-;        ;mov     a,BUTTONS    ; read button state
-;        ;anl     a,BUTMASK
-;        ;cjne    a,#0,loop1   ; if button is pressed, skip to next channel
-;
-        mov     LEDS,#ffh
-        lcall   delay        ; delay for a while
+        mov     a,CHANNELS   ; need loop for all 8 channels and send to serial
+        lcall   read_adc     ; read ADC value of channel in ACC
 
-        mov     LEDS,#f0h
-        lcall   delay
-;        dec     CHANNELS
-;        mov     a,CHANNELS
-;        cjne    a,#ffh,loop1
+        lcall   send_byte    ; send read value to serial
+        mov     a,CHANNELS
+        lcall   send_byte    ; send channel number to serial
 
-;        mov     a,r4
-;        lcall   send_byte
+        ;mov     a,BUTTONS    ; read button state
+        ;anl     a,BUTMASK
+        ;cjne    a,#0,loop1   ; if button is pressed, skip to next channel
 
-        mov     r0,a
-        lcall   set_volume
+;        mov     r0,#aah
+;        lcall   set_volume
 
-        mov     a,LEDS
-        swap    a
-        orl     a,NOACK
-        swap    a
-        mov     LEDS,a
-
-        dec     r4
-        cjne    r4,#00h,loop1
-
-        mov     r4,#0fh
 loop2:
         ljmp    loop
 
 ; INITIALIZATION SUBROUTINES -------------------------------------------------- ;
 
-; temporary init function for clock
+; _____________________________________________________________________________ ;
+;                                                              Initialize Clock
+; init_clock: initializes the PLL to 16.777216 MHz
 init_clock:
         push    psw
         push    acc
@@ -93,39 +73,45 @@ init_clock:
 
         ret
 
+; _____________________________________________________________________________ ;
+;                                                                Initialize ADC
 init_adc:
-        mov     adccon1,#10001100b
+        mov     adccon1,#10001100b      ; set ADC control register 1
+                                        ; Enable ADC
+                                        ; Conversion time 32 = 16,777216 MHz / 32 = 524288 Hz
+                                        ; Acquisition time 1
 
         ret
 
-init_volume:
-        push    acc
-        push    psw
+; _____________________________________________________________________________ ;
+;                                                        Initialize Volume Bars
+;init_volume:
+;        push    acc
+;        push    psw
 
-        mov     a,SLAVEADD
-        rl      a
-        mov     SLAVEADD,a
+;        mov     a,SLAVEADD
+;        rl      a
+;        mov     SLAVEADD,a
 
-        lcall   init_tlc56116f
+;        lcall   init_tlc56116f
 
-        mov     a,SLAVEADD
-        rr      a
-        mov     SLAVEADD,a
+;        mov     a,SLAVEADD
+;        rr      a
+;        mov     SLAVEADD,a
 
-        inc     SLAVEADD
-        mov     a,SLAVEADD
-        cjne    a,#64h,init_volume   ; if slave address does not reach 0x64, loop
+;        inc     SLAVEADD
+;        mov     a,SLAVEADD
+;        cjne    a,#64h,init_volume   ; if slave address does not reach 0x64, loop
 
-        pop     psw
-        pop     acc
+;        pop     psw
+;        pop     acc
 
-        ret
+;        ret
 
 ; MAIN SUBROUTINES ------------------------------------------------------------ ;
 
 ; _____________________________________________________________________________ ;
 ;                                                                      read_adc
-;
 ; read_adc: reads the ADC value from the ADC and returns it in the accumulator
 ; ACC as 0-7 channel selection parameter
 ; return value: 8-bit ADC value in ACC
@@ -146,24 +132,25 @@ read_adc2:
         ret
 
 ; _____________________________________________________________________________ ;
-;
+;                                                                  read_buttons
 ;read_buttons:
 ;        push    acc
 ;        push    psw
-;
+
 ;        mov     a,p0                    ; read button state
 ;        mov     p2,a                    ; write button state back to leds
 ;                                        ; wait until button is unpressed
 ;        cjne    a,#0,read_button
-;
+
 ;        cpl     a                       ; invert button state
-;
+
 ;        pop     psw
 ;        pop     acc
-;
+
 ;        ret
 
 ; _____________________________________________________________________________ ;
+;                                                           set_volue_bar (IIC)
 ; set the volume bar to the nibble in r0 (0 to 16) to the SLAVEADD channel
 set_volume:
         push    psw
@@ -186,7 +173,7 @@ set_volume2:
         mov     a,r1
         lcall   send_byte
         mov     OUTPUT,r1
-        lcall   send_ledout
+        lcall   send_byte_IIC
 
         djnz    r0,set_volume1
 
@@ -194,6 +181,7 @@ set_volume2:
         ret
 
 ; _____________________________________________________________________________ ;
+;                                                              delay subroutine
 delay:
         mov     r7, #255
 delay1:
@@ -207,7 +195,6 @@ delay2:
 ; IMPORTED SUBROUTINES AND DECLARATIONS ---------------------------------------;
 
 #include "dec.inc"
-;#include "var.inc"
 #include "serial.inc"
 #include "i2c.inc"
 #include "tlc59116.inc"
