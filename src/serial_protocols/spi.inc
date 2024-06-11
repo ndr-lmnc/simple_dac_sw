@@ -7,11 +7,32 @@
 ; _____________________________________________________________________________ ;
 ;                                                                Initialize SPI
 init_SPI:
-        mov     spicon,#00000000b       ; set SPI control register
-                                        ; SPI master mode
-                                        ; SPI clock = 16,777216 MHz / 2 = 8,388608 MHz
-                                        ; SPI clock polarity = 0
-                                        ; SPI clock phase = 0
-                                        ; SPI clock rate = 0
+        mov     spicon,#00110001b       
+
+        ret
+
+; _____________________________________________________________________________ ;
+;                                                    Write SPI control register
+write_control_register:
+        clr     cs
+        clr     dc
+        mov     spidat,a
+write_control_register1:
+        jnb     ispi,write_control_register1
+        clr     ispi
+        setb    cs
+
+        ret
+
+; _____________________________________________________________________________ ;
+;                                                       Write SPI data register
+write_data_register:
+        clr     cs
+        setb    dc
+        mov     spidat,a
+write_data_register1:
+        jnb     ispi,write_data_register1
+        clr     ispi
+        setb    cs
 
         ret

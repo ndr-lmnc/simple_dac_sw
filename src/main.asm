@@ -3,13 +3,13 @@
 ;
 ; Hardware: ADuC832
 ;
-;
+; IDE/compiler: Reads51
 
 org     0000h
 ljmp    main
 
 ; MAIN VARIABLES ------------------------------------------------------------ ;
-;
+
 CHANNELS    EQU    030h
 BUTTONS     EQU    031h
 BUTMASK     EQU    P0
@@ -17,13 +17,20 @@ LEDS        EQU    P2
 
 
 ; I2C VARIABLES ------------------------------------------------------------- ;
-;
+
 SLAVEADD   EQU    032h
 OUTPUT     EQU    033h
 BITCNT     EQU    034h
 
 NOACK      BIT    035h       ; Some flags but strange Bit assotiation
 ERR        BIT    036h
+
+; SPI VARIABLES ------------------------------------------------------------- ;
+
+RESET      BIT    P3.5
+
+CS         BIT    P3.2
+DC         BIT    P3.4
 
 ; MAIN PROGRAM -------------------------------------------------------------- ;
 
@@ -32,12 +39,14 @@ main:
 ;        mov     SLAVEADD,#60h   ; This slave address is shifted to the left by 1 bit for the WRITE operation
 
         lcall   init_clock   ; set the clock to 16.777216 MHz all next operations are based on this clock
-        ;lcall   init_IIC     ; initialize IIC communication
         lcall   init_SPI     ; initialize SPI communication
+        ;lcall   init_IIC     ; initialize IIC communication
         lcall   init_display ; initialize display
         lcall   init_serial  ; initialize serial communication to 9600 baud
         lcall   init_adc     ; initialize ADC
 ;        lcall   init_volume  ; initialize volume bars
+        lcall   clear_display
+        lcall   write_display_data
 loop:
         mov     CHANNELS,#7
         mov     BUTMASK,#10000000b
@@ -49,6 +58,8 @@ loop1:
         mov     a,CHANNELS
         lcall   send_byte    ; send channel number to serial
 
+        mov     LEDS,#00h
+
         ;mov     a,BUTTONS    ; read button state
         ;anl     a,BUTMASK
         ;cjne    a,#0,loop1   ; if button is pressed, skip to next channel
@@ -56,7 +67,6 @@ loop1:
 ;        mov     r0,#aah
 ;        lcall   set_volume
 
-loop2:
         ljmp    loop
 
 ; INITIALIZATION SUBROUTINES -------------------------------------------------- ;
@@ -183,13 +193,18 @@ set_volume2:
 ; _____________________________________________________________________________ ;
 ;                                                              delay subroutine
 delay:
-        mov     r7, #255
-delay1:
-        mov     r6, #255
-delay2:
-        djnz    r6, delay2
-        djnz    r7, delay1
+        push    acc
+        push    b
 
+        mov     a, #255
+delay1:
+        mov     b, #255
+delay2:
+        djnz    b, delay2
+        djnz    acc, delay1
+
+        pop     b
+        pop     acc
         ret
 
 ; IMPORTED SUBROUTINES AND DECLARATIONS ---------------------------------------;
@@ -197,5 +212,7 @@ delay2:
 #include "dec.inc"
 #include "serial.inc"
 #include "i2c.inc"
+#include "spi.inc"
+#include "display.inc"
 #include "tlc59116.inc"
 end
