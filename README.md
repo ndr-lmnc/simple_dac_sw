@@ -1,8 +1,3 @@
 # simple_dac_sw
 
-# TODO
-
-- [ ] complete read_buttons function
-- [ ] create driver for OLED display
-- [ ] add SPI initialization
-- [x] add I2C initialization
+The simple DAC firmware is the code for a simple Digital Audio Controller based on the ADuC832 from analog devices and more chips.
